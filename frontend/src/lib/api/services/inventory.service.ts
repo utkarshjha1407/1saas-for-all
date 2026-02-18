@@ -1,51 +1,63 @@
 /**
  * Inventory Service
- * Handles inventory items and usage tracking
+ * Handles inventory items, usage tracking, and forecasting
  */
 
 import apiClient from '../client';
-import { InventoryItem, InventoryItemCreate, InventoryUsage } from '../types';
+import {
+  InventoryItem,
+  InventoryItemCreate,
+  InventoryItemUpdate,
+  InventoryAdjustment,
+  InventoryUsage,
+  InventoryForecast,
+} from '../types';
 
 export const inventoryService = {
   // Items
-  async getAll(): Promise<InventoryItem[]> {
-    const response = await apiClient.get<InventoryItem[]>('/inventory');
+  async getItems(lowStockOnly?: boolean): Promise<InventoryItem[]> {
+    const params = lowStockOnly ? { low_stock_only: true } : {};
+    const response = await apiClient.get<InventoryItem[]>('/inventory/items', { params });
     return response.data;
   },
 
-  async getById(id: string): Promise<InventoryItem> {
-    const response = await apiClient.get<InventoryItem>(`/inventory/${id}`);
+  async getItem(id: string): Promise<InventoryItem> {
+    const response = await apiClient.get<InventoryItem>(`/inventory/items/${id}`);
     return response.data;
   },
 
-  async create(data: InventoryItemCreate): Promise<InventoryItem> {
-    const response = await apiClient.post<InventoryItem>('/inventory', data);
+  async createItem(data: InventoryItemCreate): Promise<InventoryItem> {
+    const response = await apiClient.post<InventoryItem>('/inventory/items', data);
     return response.data;
   },
 
-  async update(id: string, data: Partial<InventoryItemCreate>): Promise<InventoryItem> {
-    const response = await apiClient.put<InventoryItem>(`/inventory/${id}`, data);
+  async updateItem(id: string, data: InventoryItemUpdate): Promise<InventoryItem> {
+    const response = await apiClient.put<InventoryItem>(`/inventory/items/${id}`, data);
     return response.data;
   },
 
-  async delete(id: string): Promise<void> {
-    await apiClient.delete(`/inventory/${id}`);
+  async deleteItem(id: string): Promise<void> {
+    await apiClient.delete(`/inventory/items/${id}`);
   },
 
-  async updateQuantity(id: string, quantity: number): Promise<InventoryItem> {
-    const response = await apiClient.patch<InventoryItem>(`/inventory/${id}/quantity`, { quantity });
+  async adjustQuantity(id: string, data: InventoryAdjustment): Promise<InventoryItem> {
+    const response = await apiClient.post<InventoryItem>(`/inventory/items/${id}/adjust`, data);
     return response.data;
   },
 
   // Usage
-  async getUsage(itemId?: string): Promise<InventoryUsage[]> {
-    const url = itemId ? `/inventory/usage?item_id=${itemId}` : '/inventory/usage';
-    const response = await apiClient.get<InventoryUsage[]>(url);
+  async getUsageHistory(itemId: string, limit?: number): Promise<InventoryUsage[]> {
+    const params = limit ? { limit } : {};
+    const response = await apiClient.get<InventoryUsage[]>(`/inventory/items/${itemId}/usage`, { params });
     return response.data;
   },
 
-  async getLowStock(): Promise<InventoryItem[]> {
-    const response = await apiClient.get<InventoryItem[]>('/inventory/low-stock');
+  // Forecast
+  async getForecast(daysAhead?: number): Promise<InventoryForecast[]> {
+    const params = daysAhead ? { days_ahead: daysAhead } : {};
+    const response = await apiClient.get<InventoryForecast[]>('/inventory/forecast', { params });
     return response.data;
   },
 };
+
+export default inventoryService;

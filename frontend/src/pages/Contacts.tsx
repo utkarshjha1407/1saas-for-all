@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Search, Plus, Mail, Phone, MoreHorizontal, Loader2, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useContacts } from "@/hooks/useContacts";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function Contacts() {
+  const { user } = useAuth();
   const { contacts, isLoading, createContact, deleteContact } = useContacts();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,8 +23,18 @@ export default function Contacts() {
 
   const handleCreateContact = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user?.workspace_id) {
+      toast({
+        title: "Error",
+        description: "Workspace not found. Please try logging in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
-      await createContact(formData);
+      await createContact({ data: formData, workspaceId: user.workspace_id });
       toast({
         title: "Contact created",
         description: "New contact has been added successfully.",

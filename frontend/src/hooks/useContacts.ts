@@ -42,12 +42,30 @@ export const useContacts = () => {
     },
   });
 
+  // Delete contact (placeholder - needs backend endpoint)
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // For now, just invalidate the query
+      // TODO: Implement delete endpoint in backend
+      throw new Error('Delete functionality not yet implemented');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      toast.success('Contact deleted!');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to delete contact');
+    },
+  });
+
   return {
     contacts: contacts || [],
     isLoading,
     createContact: createMutation.mutate,
     updateContact: updateMutation.mutate,
+    deleteContact: deleteMutation.mutate,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
   };
 };

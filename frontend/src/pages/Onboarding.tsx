@@ -17,6 +17,9 @@ export default function Onboarding() {
     password: "",
     full_name: "",
     workspace_name: "",
+    address: "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    contact_email: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,12 +27,22 @@ export default function Onboarding() {
     setIsLoading(true);
 
     try {
-      await authService.register(formData);
+      // Register user with complete workspace details
+      await authService.register({
+        email: formData.email,
+        password: formData.password,
+        full_name: formData.full_name,
+        workspace_name: formData.workspace_name,
+        address: formData.address,
+        timezone: formData.timezone,
+        contact_email: formData.contact_email,
+      });
+      
       toast({
         title: "Account created!",
-        description: "Welcome to CareOps. Redirecting to dashboard...",
+        description: "Welcome to CareOps. Setting up communication...",
       });
-      setTimeout(() => navigate("/dashboard"), 1500);
+      setTimeout(() => navigate("/integration-setup"), 1500);
     } catch (error: any) {
       toast({
         title: "Registration failed",
@@ -118,19 +131,72 @@ export default function Onboarding() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="workspace_name">Workspace Name</Label>
+              <Label htmlFor="workspace_name">Business Name *</Label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="workspace_name"
                   type="text"
-                  placeholder="My Business"
+                  placeholder="My Wellness Clinic"
                   value={formData.workspace_name}
                   onChange={(e) => setFormData({ ...formData, workspace_name: e.target.value })}
                   className="pl-10"
                   required
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Business Address *</Label>
+              <Input
+                id="address"
+                type="text"
+                placeholder="123 Main St, City, State ZIP"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Important for in-person services
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="timezone">Time Zone *</Label>
+              <select
+                id="timezone"
+                value={formData.timezone}
+                onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                required
+              >
+                <option value="America/New_York">Eastern Time (ET)</option>
+                <option value="America/Chicago">Central Time (CT)</option>
+                <option value="America/Denver">Mountain Time (MT)</option>
+                <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                <option value="America/Anchorage">Alaska Time (AKT)</option>
+                <option value="Pacific/Honolulu">Hawaii Time (HT)</option>
+                <option value="UTC">UTC</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contact_email">Contact Email *</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="contact_email"
+                  type="email"
+                  placeholder="contact@mybusiness.com"
+                  value={formData.contact_email}
+                  onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                  className="pl-10"
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Public email for customer inquiries
+              </p>
             </div>
 
             <Button

@@ -16,9 +16,18 @@ router = APIRouter()
 async def create_contact(
     contact_data: ContactCreate,
     workspace_id: str = Query(...),
+    current_user: TokenData = Depends(require_staff_or_owner),
     supabase: Client = Depends(get_supabase)
 ):
-    """Create new contact (public endpoint)"""
+    """Create new contact (requires authentication)"""
+    # Verify workspace_id matches user's workspace
+    if workspace_id != current_user.workspace_id:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot create contacts for other workspaces"
+        )
+    
     service = BaseService(supabase, "contacts")
     contact = await service.create({
         **contact_data.model_dump(),

@@ -48,7 +48,7 @@ CREATE TABLE booking_types (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     duration_minutes INTEGER NOT NULL,
-    location TEXT,
+    location_type VARCHAR(50) NOT NULL DEFAULT 'video',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -100,14 +100,16 @@ CREATE TABLE messages (
     sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Form templates table
+-- Form templates table (for uploaded forms like PDFs, documents)
 CREATE TABLE form_templates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    fields JSONB NOT NULL,
-    booking_type_ids UUID[],
+    file_url TEXT NOT NULL, -- URL to uploaded file (PDF, DOCX, etc.)
+    file_type VARCHAR(50), -- e.g., 'pdf', 'docx', 'doc'
+    file_size INTEGER, -- File size in bytes
+    booking_type_ids UUID[], -- Which booking types require this form
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

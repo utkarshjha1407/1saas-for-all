@@ -4,7 +4,7 @@
  */
 
 import apiClient from '../client';
-import { Message, Conversation } from '../types';
+import { Message, Conversation, MessageCreate } from '../types';
 
 export const messageService = {
   /**
@@ -26,11 +26,15 @@ export const messageService = {
   /**
    * Send a message
    */
-  async sendMessage(conversationId: string, data: { content: string; channel: 'email' | 'sms' }): Promise<Message> {
-    const response = await apiClient.post<Message>(`/messages/conversations/${conversationId}/messages`, {
-      conversation_id: conversationId,
-      ...data,
-    });
+  async sendMessage(data: MessageCreate): Promise<Message> {
+    const response = await apiClient.post<Message>(
+      `/messages/conversations/${data.conversationId}/messages`, 
+      {
+        conversation_id: data.conversationId,
+        content: data.content,
+        channel: data.channel,
+      }
+    );
     return response.data;
   },
 

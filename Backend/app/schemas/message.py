@@ -34,6 +34,8 @@ class ConversationResponse(BaseModel):
     workspace_id: str
     contact_id: str
     last_message_at: datetime
+    last_message_preview: Optional[str] = None
+    last_channel: Optional[CommunicationChannel] = None
     unread_count: int
     is_automated_paused: bool
     created_at: datetime

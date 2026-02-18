@@ -10,6 +10,9 @@ class UserRegister(BaseModel):
     password: str = Field(..., min_length=8, max_length=128, description="Password must be at least 8 characters with a symbol")
     full_name: str = Field(..., min_length=1, max_length=255)
     workspace_name: str = Field(..., min_length=1, max_length=255)
+    address: str = Field(default="", description="Business address for in-person services")
+    timezone: str = Field(default="UTC", description="Business timezone")
+    contact_email: EmailStr = Field(default=None, description="Public contact email (defaults to user email)")
     
     @field_validator('password')
     @classmethod

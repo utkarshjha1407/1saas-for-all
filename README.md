@@ -1,51 +1,41 @@
 # CareOps - Unified Operations Platform
 
-A complete full-stack application for managing service-based businesses with bookings, messaging, forms, inventory, and team management.
+A complete full-stack application for managing service-based businesses with bookings, contact management, forms, inventory, and team collaboration.
 
-## 🎯 Quick Links
+## ✨ Features
 
-- **[🚀 Getting Started Guide](./GETTING_STARTED.md)** - Start here! Complete setup in 10 minutes
-- **[📍 Current State](./CURRENT_STATE.md)** - What works right now (detailed status)
-- **[🎨 Visual Walkthrough](./VISUAL_WALKTHROUGH.md)** - See the UI and user experience
-- **[⚡ Quick Reference](./QUICK_REFERENCE.md)** - Commands, URLs, and code snippets
-- **[📊 What We Built](./WHAT_WE_BUILT.md)** - Complete project summary
-- **[✅ Project Status](./PROJECT_STATUS.md)** - Implementation progress
-- **[🏗️ Architecture Overview](./ARCHITECTURE_OVERVIEW.md)** - System design and diagrams
-- **[🔧 Troubleshooting](./TROUBLESHOOTING.md)** - Fix common issues
-- **[📚 Backend Documentation](./Backend/README.md)** - Backend architecture
-- **[📖 API Reference](./Backend/API_DOCUMENTATION.md)** - Complete API docs
-- **[🔌 Integration Guide](./frontend/INTEGRATION_GUIDE.md)** - Frontend API usage
-
-## ✨ What's Working Right Now
-
-You can immediately:
-- ✅ Register and create a workspace
-- ✅ Login with authentication
-- ✅ View dashboard with real-time stats
-- ✅ Manage bookings from the database
-- ✅ Navigate between all pages
-- ✅ Secure logout
+- 🔐 User authentication with JWT
+- 👥 Workspace and team management
+- 📅 Booking system with availability scheduling
+- 💬 Unified inbox for communications
+- 📝 Contact management
+- 📋 Form builder and submissions
+- 📦 Inventory tracking with alerts
+- 📊 Real-time dashboard analytics
+- 🔔 Automated notifications
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.9+
-- Node.js 18+
-- Redis (Docker or local)
+- Node.js 16+
 - Supabase account
 
 ### Backend Setup
 
-1. Navigate to backend directory:
+1. Navigate to backend and create virtual environment:
 ```bash
 cd Backend
+python -m venv venv
 ```
 
-2. Create and activate virtual environment:
+2. Activate virtual environment:
 ```bash
-python -m venv venv
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Mac/Linux
+# Windows
+venv\Scripts\activate
+
+# Mac/Linux
+source venv/bin/activate
 ```
 
 3. Install dependencies:
@@ -53,29 +43,25 @@ source venv/bin/activate  # Mac/Linux
 pip install -r requirements.txt
 ```
 
-4. Configure environment variables (copy `.env.example` to `.env` and fill in):
-```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_anon_key
-SECRET_KEY=your_secret_key
-CORS_ORIGINS=http://localhost:8080
-```
+4. Configure environment:
+- Copy `.env.example` to `.env`
+- Add your Supabase credentials
 
-5. Start Redis (if using Docker):
+5. Run database migrations:
+- Go to Supabase Dashboard > SQL Editor
+- Run migrations from `Backend/migrations/` in order
+
+6. Start backend:
 ```bash
-docker run -d -p 6379:6379 --name careops-redis redis:alpine
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-6. Run the backend:
-```bash
-uvicorn app.main:app --reload --port 8000
-```
-
-Backend will be available at: http://localhost:8000
+Backend: http://localhost:8000  
+API Docs: http://localhost:8000/api/v1/docs
 
 ### Frontend Setup
 
-1. Navigate to frontend directory:
+1. Navigate to frontend:
 ```bash
 cd frontend
 ```
@@ -85,154 +71,119 @@ cd frontend
 npm install
 ```
 
-3. Configure environment variables (copy `.env.example` to `.env`):
-```env
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-4. Start the development server:
+3. Start development server:
 ```bash
 npm run dev
 ```
 
-Frontend will be available at: http://localhost:8080
+Frontend: http://localhost:8080
 
 ## 📚 Documentation
 
-- [Backend README](./Backend/README.md) - Backend architecture and API docs
-- [API Documentation](./Backend/API_DOCUMENTATION.md) - Complete API reference
-- [Frontend Integration Guide](./frontend/INTEGRATION_GUIDE.md) - How to use the API layer
+- [Setup Guide](./SETUP.md) - Detailed setup instructions
 - [Project Status](./PROJECT_STATUS.md) - Current implementation status
+- [Backend README](./Backend/README.md) - Backend architecture
+- [API Documentation](http://localhost:8000/api/v1/docs) - Interactive API docs
 
-## 🏗️ Architecture
+## 🏗️ Tech Stack
 
-### Backend (FastAPI + Supabase)
-- **Framework**: FastAPI with async support
-- **Database**: PostgreSQL via Supabase
-- **Authentication**: JWT tokens with role-based access
-- **Background Tasks**: Celery with Redis
-- **Communication**: Multi-provider (SendGrid, Resend, Twilio)
+### Backend
+- **Framework**: FastAPI (Python)
+- **Database**: PostgreSQL (Supabase)
+- **Authentication**: JWT with role-based access
+- **Background Tasks**: Celery + Redis
+- **Email/SMS**: Multi-provider support
 
-### Frontend (React + TypeScript)
-- **Framework**: Vite + React 18
-- **UI Library**: shadcn/ui components
-- **State Management**: React Query (TanStack Query)
-- **Routing**: React Router v6
+### Frontend
+- **Framework**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **UI Components**: shadcn/ui
+- **State Management**: TanStack Query
 - **Styling**: Tailwind CSS
+- **HTTP Client**: Axios
 
-## 🎯 Features
+## 📁 Project Structure
 
-### Core Functionality
-- ✅ User authentication and authorization
-- ✅ Workspace management
-- ✅ Booking system with calendar
-- ✅ Unified inbox (email + SMS)
-- ✅ Contact management
-- ✅ Form templates and submissions
-- ✅ Inventory tracking with alerts
-- ✅ Dashboard with real-time stats
-- ✅ Team management with permissions
-
-### API Integration
-- ✅ Axios client with interceptors
-- ✅ Automatic token refresh
-- ✅ React Query hooks for data fetching
-- ✅ TypeScript interfaces for type safety
-
-## 🔐 Default Credentials
-
-After registration, you can login with your created account.
-
-## 📦 Tech Stack
-
-**Backend:**
-- FastAPI
-- Supabase (PostgreSQL)
-- Celery + Redis
-- Pydantic
-- JWT Authentication
-
-**Frontend:**
-- React 18
-- TypeScript
-- Vite
-- TanStack Query
-- Axios
-- shadcn/ui
-- Tailwind CSS
-- Framer Motion
-
-## 🛠️ Development
-
-### Backend Development
-```bash
-cd Backend
-uvicorn app.main:app --reload --port 8000
+```
+careops/
+├── Backend/              # FastAPI backend
+│   ├── app/             # Application code
+│   ├── tests/           # Test suite
+│   ├── migrations/      # Database migrations
+│   └── requirements.txt # Python dependencies
+├── frontend/            # React frontend
+│   ├── src/            # Source code
+│   ├── public/         # Static assets
+│   └── package.json    # Node dependencies
+└── README.md           # This file
 ```
 
-### Frontend Development
-```bash
-cd frontend
-npm run dev
-```
-
-### Run Tests
-```bash
-# Backend tests
-cd Backend
-pytest
-
-# Frontend tests
-cd frontend
-npm test
-```
-
-## 📝 Environment Variables
+## 🔐 Environment Variables
 
 ### Backend (.env)
 ```env
-# Supabase
-SUPABASE_URL=
-SUPABASE_KEY=
-
-# Security
-SECRET_KEY=
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# CORS
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_KEY=your_service_key
+SECRET_KEY=your_secret_key
 CORS_ORIGINS=http://localhost:8080
-
-# Redis
-REDIS_URL=redis://localhost:6379/0
-
-# Email Providers
-SENDGRID_API_KEY=
-RESEND_API_KEY=
-
-# SMS Provider
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_PHONE_NUMBER=
 ```
 
 ### Frontend (.env)
 ```env
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000/api/v1
+```
+
+## 🧪 Testing
+
+### Backend Tests
+```bash
+cd Backend
+pytest tests/ -v
+```
+
+### Frontend Tests
+```bash
+cd frontend
+npm test
 ```
 
 ## 🚢 Deployment
 
-See [DEPLOYMENT.md](./Backend/DEPLOYMENT.md) for production deployment instructions.
+1. Set up production environment variables
+2. Run database migrations on production database
+3. Build frontend: `npm run build`
+4. Deploy backend with production ASGI server (e.g., Gunicorn)
+5. Serve frontend build files with web server (e.g., Nginx)
 
-## 📄 License
+## 📝 API Endpoints
 
-MIT License - see LICENSE file for details
+Key endpoints:
+- `POST /api/v1/auth/register` - User registration
+- `POST /api/v1/auth/login` - User login
+- `GET /api/v1/booking-types` - List booking types
+- `POST /api/v1/bookings` - Create booking
+- `GET /api/v1/contacts` - List contacts
+- `GET /api/v1/dashboard/stats` - Dashboard statistics
+
+Full API documentation: http://localhost:8000/api/v1/docs
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](./Backend/CONTRIBUTING.md) for contribution guidelines.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Write/update tests
+5. Submit a pull request
+
+## 📄 License
+
+MIT License
+
+## 🐛 Issues
+
+Found a bug? Please open an issue on GitHub.
 
 ## 📞 Support
 
-For issues and questions, please open a GitHub issue.
+For questions and support, please open a GitHub issue or discussion.

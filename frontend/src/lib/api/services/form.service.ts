@@ -1,10 +1,10 @@
 /**
  * Form Service
- * Handles form templates and submissions
+ * Handles form templates (file uploads) and submissions
  */
 
 import apiClient from '../client';
-import { FormTemplate, FormSubmission, FormTemplateCreate, FormSubmissionCreate } from '../types';
+import { FormTemplate, FormSubmission, FormTemplateCreate, FormSubmissionUpdate } from '../types';
 
 export const formService = {
   // Templates
@@ -33,8 +33,9 @@ export const formService = {
   },
 
   // Submissions
-  async getSubmissions(): Promise<FormSubmission[]> {
-    const response = await apiClient.get<FormSubmission[]>('/forms/submissions');
+  async getSubmissions(status?: string): Promise<FormSubmission[]> {
+    const params = status ? { status } : {};
+    const response = await apiClient.get<FormSubmission[]>('/forms/submissions', { params });
     return response.data;
   },
 
@@ -43,13 +44,22 @@ export const formService = {
     return response.data;
   },
 
-  async createSubmission(data: FormSubmissionCreate): Promise<FormSubmission> {
-    const response = await apiClient.post<FormSubmission>('/forms/submissions', data);
+  async updateSubmission(id: string, data: FormSubmissionUpdate): Promise<FormSubmission> {
+    const response = await apiClient.put<FormSubmission>(`/forms/submissions/${id}`, data);
     return response.data;
   },
 
-  async updateSubmissionStatus(id: string, status: FormSubmission['status']): Promise<FormSubmission> {
-    const response = await apiClient.patch<FormSubmission>(`/forms/submissions/${id}/status`, { status });
+  // Public endpoints
+  async getPublicFormSubmission(submissionId: string): Promise<any> {
+    const response = await apiClient.get(`/public/forms/view/${submissionId}`);
     return response.data;
+  },
+
+  async trackDownload(submissionId: string): Promise<void> {
+    await apiClient.post(`/public/forms/track-download/${submissionId}`);
+  },
+
+  async markComplete(submissionId: string): Promise<void> {
+    await apiClient.post(`/public/forms/mark-complete/${submissionId}`);
   },
 };

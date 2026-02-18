@@ -6,11 +6,23 @@ from app.models.enums import FormStatus
 
 
 class FormTemplateCreate(BaseModel):
-    """Create form template schema"""
-    name: str = Field(..., min_length=1, max_length=255)
+    """Create form template schema (file upload)"""
+    name: str = Field(..., min_length=1, max_length=255, description="Form name")
+    description: Optional[str] = Field(None, description="Form description")
+    file_url: str = Field(..., description="URL to uploaded file (PDF, DOCX, etc.)")
+    file_type: Optional[str] = Field(None, description="File type (pdf, docx, doc)")
+    file_size: Optional[int] = Field(None, description="File size in bytes")
+    booking_type_ids: List[str] = Field(default_factory=list, description="Booking types that require this form")
+
+
+class FormTemplateUpdate(BaseModel):
+    """Update form template schema"""
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
-    fields: List[Dict[str, Any]]  # JSON schema for form fields
-    booking_type_ids: List[str] = []
+    file_url: Optional[str] = None
+    file_type: Optional[str] = None
+    file_size: Optional[int] = None
+    booking_type_ids: Optional[List[str]] = None
 
 
 class FormTemplateResponse(BaseModel):
@@ -19,7 +31,9 @@ class FormTemplateResponse(BaseModel):
     workspace_id: str
     name: str
     description: Optional[str]
-    fields: List[Dict[str, Any]]
+    file_url: str
+    file_type: Optional[str]
+    file_size: Optional[int]
     booking_type_ids: List[str]
     created_at: datetime
     
@@ -31,7 +45,18 @@ class FormSubmissionCreate(BaseModel):
     """Create form submission schema"""
     form_template_id: str
     booking_id: str
-    data: Dict[str, Any]
+    contact_id: str
+    status: str = "pending"
+    data: Dict[str, Any] = Field(default_factory=dict)
+
+
+class FormSubmissionUpdate(BaseModel):
+    """Update form submission schema"""
+    status: Optional[str] = None
+    data: Optional[Dict[str, Any]] = None
+    viewed_at: Optional[datetime] = None
+    downloaded_at: Optional[datetime] = None
+    submitted_at: Optional[datetime] = None
 
 
 class FormSubmissionPublicCreate(BaseModel):
@@ -45,9 +70,12 @@ class FormSubmissionResponse(BaseModel):
     form_template_id: str
     booking_id: str
     contact_id: str
-    status: FormStatus
+    workspace_id: str
+    status: str
     data: Dict[str, Any]
     submitted_at: Optional[datetime]
+    viewed_at: Optional[datetime]
+    downloaded_at: Optional[datetime]
     created_at: datetime
     access_token: Optional[str] = None
     public_url: Optional[str] = None

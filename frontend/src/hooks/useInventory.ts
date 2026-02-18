@@ -1,87 +1,88 @@
 /**
  * Inventory Hook
- * Manages inventory items and usage
+ * Manages inventory items, usage tracking, and forecasting
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { inventoryService, InventoryItem, InventoryItemCreate } from '@/lib/api';
-import { toast } from 'sonner';
+import { inventoryService } from '@/lib/api/services/inventory.service';
+import type {
+  InventoryItem,
+  InventoryItemCreate,
+  InventoryItemUpdate,
+  InventoryAdjustment,
+  InventoryForecast,
+} from '@/lib/api/types';
 
 export const useInventory = () => {
   const queryClient = useQueryClient();
 
-  // Get all items
-  const { data: items, isLoading } = useQuery<InventoryItem[]>({
-    queryKey: ['inventory'],
-    queryFn: () => inventoryService.getAll(),
+  // Get items
+  const { data: items = [], isLoading: itemsLoading, refetch: fetchItems } = useQuery<InventoryItem[]>({
+    queryKey: ['inventory', 'items'],
+    queryFn: () => inventoryService.getItems(),
   });
 
   // Get low stock items
-  const { data: lowStockItems } = useQuery<InventoryItem[]>({
-    queryKey: ['inventory', 'low-stock'],
-    queryFn: () => inventoryService.getLowStock(),
+  const { data: lowStockItems = [], refetch: fetchLowStockItems } = useQuery<InventoryItem[]>({
+    queryKey: ['inventory', 'items', 'low-stock'],
+    queryFn: () => inventoryService.getItems(true),
+  });
+
+  // Get forecast
+  const { data: forecast = [], isLoading: forecastLoading, refetch: fetchForecast } = useQuery<InventoryForecast[]>({
+    queryKey: ['inventory', 'forecast'],
+    queryFn: () => inventoryService.getForecast(30),
   });
 
   // Create item
-  const createMutation = useMutation({
-    mutationFn: (data: InventoryItemCreate) => inventoryService.create(data),
+  const createItemMutation = useMutation({
+    mutationFn: (data: InventoryItemCreate) => inventoryService.createItem(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      toast.success('Item added successfully!');
-    },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to add item');
     },
   });
 
   // Update item
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<InventoryItemCreate> }) =>
-      inventoryService.update(id, data),
+  const updateItemMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: InventoryItemUpdate }) =>
+      inventoryService.updateItem(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      toast.success('Item updated successfully!');
-    },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to update item');
-    },
-  });
-
-  // Update quantity
-  const updateQuantityMutation = useMutation({
-    mutationFn: ({ id, quantity }: { id: string; quantity: number }) =>
-      inventoryService.updateQuantity(id, quantity),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      toast.success('Quantity updated!');
-    },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to update quantity');
     },
   });
 
   // Delete item
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => inventoryService.delete(id),
+  const deleteItemMutation = useMutation({
+    mutationFn: (id: string) => inventoryService.deleteItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      toast.success('Item deleted!');
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to delete item');
+  });
+
+  // Adjust quantity
+  const adjustQuantityMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: InventoryAdjustment }) =>
+      inventoryService.adjustQuantity(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
     },
   });
 
   return {
-    items: items || [],
-    lowStockItems: lowStockItems || [],
-    isLoading,
-    createItem: createMutation.mutate,
-    updateItem: updateMutation.mutate,
-    updateQuantity: updateQuantityMutation.mutate,
-    deleteItem: deleteMutation.mutate,
-    isCreating: createMutation.isPending,
-    isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending,
+    items,
+    lowStockItems,
+    forecast,
+    isLoading: itemsLoading || forecastLoading,
+    fetchItems,
+    fetchLowStockItems,
+    fetchForecast,
+    createItem: createItemMutation.mutateAsync,
+    updateItem: updateItemMutation.mutateAsync,
+    deleteItem: deleteItemMutation.mutateAsync,
+    adjustQuantity: adjustQuantityMutation.mutateAsync,
+    isCreatingItem: createItemMutation.isPending,
+    isUpdatingItem: updateItemMutation.isPending,
+    isDeletingItem: deleteItemMutation.isPending,
+    isAdjustingQuantity: adjustQuantityMutation.isPending,
   };
 };

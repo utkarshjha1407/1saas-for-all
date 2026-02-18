@@ -57,6 +57,19 @@ def send_booking_confirmation(booking_id: str):
         booking_type = booking_data["booking_types"]
         workspace = booking_data["workspaces"]
         
+        # Process inventory for this booking
+        try:
+            from app.services.inventory_service import InventoryService
+            inventory_service = InventoryService(supabase)
+            inventory_service.process_booking_inventory(
+                booking_id=booking_id,
+                booking_type_id=booking_data["booking_type_id"],
+                workspace_id=booking_data["workspace_id"]
+            )
+        except Exception as inv_error:
+            logger.warning("inventory_processing_failed", booking_id=booking_id, error=str(inv_error))
+            # Don't fail booking confirmation if inventory fails
+        
         # Send confirmation email
         if contact.get("email"):
             email_service = EmailService()
@@ -128,19 +141,31 @@ def send_form_after_booking(booking_id: str):
     try:
         supabase = get_supabase_client().service_client
         
-        # Get booking
-        booking = supabase.table("bookings").select("*, contacts(*), booking_types(*)").eq("id", booking_id).execute()
+        # Get booking with contact and booking type info
+        booking = supabase.table("bookings").select("*, contacts(*), booking_types(*), workspaces(*)").eq("id", booking_id).execute()
         if not booking.data:
+            logger.warning("booking_not_found", booking_id=booking_id)
             return
         
         booking_data = booking.data[0]
+        contact = booking_data["contacts"]
+        booking_type = booking_data["booking_types"]
+        workspace = booking_data["workspaces"]
         
-        # Get forms for this booking type
-        forms = supabase.table("form_templates").select("*").contains("booking_type_ids", [booking_data["booking_type_id"]]).execute()
+        # Get forms linked to this booking type
+        forms = supabase.table("form_templates").select("*").eq("workspace_id", booking_data["workspace_id"]).execute()
         
-        for form in forms.data:
-            # Create form submission
-            supabase.table("form_submissions").insert({
+        # Filter forms that include this booking type
+        linked_forms = [f for f in forms.data if booking_data["booking_type_id"] in (f.get("booking_type_ids") or [])]
+        
+        if not linked_forms:
+            logger.info("no_forms_for_booking_type", booking_id=booking_id, booking_type_id=booking_data["booking_type_id"])
+            return
+        
+        # Create form submissions for each linked form
+        form_links = []
+        for form in linked_forms:
+            submission = supabase.table("form_submissions").insert({
                 "form_template_id": form["id"],
                 "booking_id": booking_id,
                 "contact_id": booking_data["contact_id"],
@@ -148,8 +173,44 @@ def send_form_after_booking(booking_id: str):
                 "status": FormStatus.PENDING.value,
                 "data": {}
             }).execute()
+            
+            if submission.data:
+                submission_id = submission.data[0]["id"]
+                # Generate public URL for form access
+                form_url = f"{workspace.get('public_url', 'https://app.careops.com')}/forms/{submission_id}"
+                form_links.append({
+                    "name": form["name"],
+                    "url": form_url,
+                    "file_url": form["file_url"]
+                })
         
-        logger.info("forms_sent_after_booking", booking_id=booking_id, form_count=len(forms.data))
+        # Send email with form links
+        if contact.get("email") and form_links:
+            email_service = EmailService()
+            
+            # Build form links HTML
+            forms_html = "<ul>"
+            for form_link in form_links:
+                forms_html += f'<li><a href="{form_link["url"]}">{form_link["name"]}</a></li>'
+            forms_html += "</ul>"
+            
+            scheduled_time = datetime.fromisoformat(booking_data["scheduled_at"])
+            
+            email_service.send_email(
+                to=contact["email"],
+                subject=f"Required Forms for Your {booking_type['name']} Appointment",
+                content=f"""
+                <h2>Please Complete These Forms</h2>
+                <p>Thank you for booking {booking_type['name']} on {scheduled_time.strftime('%B %d, %Y at %I:%M %p')}.</p>
+                <p>Please complete the following forms before your appointment:</p>
+                {forms_html}
+                <p>If you have any questions, please contact us at {workspace.get('contact_email', workspace.get('email', ''))}.</p>
+                <p>Thank you!</p>
+                <p><strong>{workspace['name']}</strong></p>
+                """
+            )
+        
+        logger.info("forms_sent_after_booking", booking_id=booking_id, form_count=len(linked_forms))
     except Exception as e:
         logger.exception("send_forms_failed", booking_id=booking_id, error=str(e))
 

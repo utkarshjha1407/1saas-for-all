@@ -22,7 +22,6 @@ async def get_dashboard_stats(
     
     if not workspace_id:
         # Return empty stats if no workspace
-        from app.schemas.dashboard import BookingOverview, LeadOverview, FormOverview, InventoryOverview
         return DashboardStats(
             bookings=BookingOverview(today_count=0, upcoming_count=0, completed_count=0, no_show_count=0),
             leads=LeadOverview(new_inquiries=0, ongoing_conversations=0, unanswered_messages=0),

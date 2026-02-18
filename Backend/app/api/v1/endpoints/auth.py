@@ -82,8 +82,9 @@ async def register(
         # Create workspace with owner
         workspace = supabase.table("workspaces").insert({
             "name": user_data.workspace_name,
-            "address": "",
-            "contact_email": user_data.email,
+            "address": user_data.address or "",
+            "timezone": user_data.timezone or "UTC",
+            "contact_email": user_data.contact_email or user_data.email,
             "status": "setup",
             "onboarding_step": "workspace_created",
             "owner_id": user_id,

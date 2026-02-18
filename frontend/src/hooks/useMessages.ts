@@ -10,10 +10,25 @@ import { toast } from 'sonner';
 export const useMessages = () => {
   const queryClient = useQueryClient();
 
-  // Get conversations
+  // Get conversations with messages
   const { data: conversations, isLoading: conversationsLoading } = useQuery<Conversation[]>({
     queryKey: ['conversations'],
-    queryFn: () => messageService.getConversations(),
+    queryFn: async () => {
+      const convos = await messageService.getConversations();
+      // Fetch messages for each conversation
+      const convosWithMessages = await Promise.all(
+        convos.map(async (convo) => {
+          try {
+            const messages = await messageService.getMessages(convo.id);
+            return { ...convo, messages };
+          } catch {
+            return { ...convo, messages: [] };
+          }
+        })
+      );
+      return convosWithMessages;
+    },
+    refetchInterval: 10000, // Refetch every 10 seconds for new messages
   });
 
   // Send message
@@ -22,27 +37,28 @@ export const useMessages = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       queryClient.invalidateQueries({ queryKey: ['messages'] });
-      toast.success('Message sent!');
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+      toast.success('Message sent! Automation paused for this conversation.');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to send message');
     },
   });
 
-  // Get messages for a conversation
-  const useConversationMessages = (conversationId?: string) => {
-    return useQuery<Message[]>({
-      queryKey: ['messages', conversationId],
-      queryFn: () => messageService.getMessages(conversationId!),
-      enabled: !!conversationId,
-    });
-  };
+  // Mark conversation as read
+  const markAsReadMutation = useMutation({
+    mutationFn: (conversationId: string) => messageService.markAsRead(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+    },
+  });
 
   return {
     conversations: conversations || [],
     isLoading: conversationsLoading,
-    sendMessage: sendMessageMutation.mutate,
+    sendMessage: (data: MessageCreate) => sendMessageMutation.mutateAsync(data),
     isSending: sendMessageMutation.isPending,
-    useConversationMessages,
+    markAsRead: markAsReadMutation.mutate,
   };
 };

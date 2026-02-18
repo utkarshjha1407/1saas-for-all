@@ -20,7 +20,23 @@ async def get_conversations(
     """Get all conversations for workspace"""
     service = BaseService(supabase, "conversations")
     conversations = await service.get_all({"workspace_id": current_user.workspace_id})
-    return [ConversationResponse(**c) for c in conversations]
+    
+    # Enrich with last message preview and channel
+    enriched_conversations = []
+    for convo in conversations:
+        # Get last message
+        last_msg = supabase.table("messages")\
+            .select("content, channel")\
+            .eq("conversation_id", convo["id"])\
+            .order("sent_at", desc=True)\
+            .limit(1)\
+            .execute()
+        
+        convo["last_message_preview"] = last_msg.data[0]["content"][:100] if last_msg.data else None
+        convo["last_channel"] = last_msg.data[0]["channel"] if last_msg.data else None
+        enriched_conversations.append(ConversationResponse(**convo))
+    
+    return enriched_conversations
 
 
 @router.get("/conversations/{conversation_id}/messages", response_model=List[MessageResponse])
@@ -65,4 +81,8 @@ async def mark_conversation_read(
 ):
     """Mark all messages in conversation as read"""
     supabase.table("messages").update({"is_read": True}).eq("conversation_id", conversation_id).execute()
+    
+    # Update unread count
+    supabase.table("conversations").update({"unread_count": 0}).eq("id", conversation_id).execute()
+    
     return {"success": True}
