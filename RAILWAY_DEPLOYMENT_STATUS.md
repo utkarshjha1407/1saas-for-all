@@ -2,28 +2,58 @@
 
 ## Latest Update - February 20, 2026
 
-### ✅ Issues Fixed (Commit: f643b70)
+### ✅ Latest Fix (Commit: 2732896)
 
-1. **Dockerfile Permission Error**
-   - Problem: `exec container process '/root/.local/bin/uvicorn': Permission denied`
-   - Solution: Changed from `--user` flag to global installation
-   - Modified Dockerfile to use multi-stage build with proper package copying
+**Problem**: Railway was still trying to use Docker/Dockerfile instead of Nixpacks, causing "pip: command not found" error
 
-2. **httpx Dependency Conflict**
-   - Problem: `supabase 2.3.4 depends on httpx<0.26 and >=0.24` but we had `httpx==0.26.0`
-   - Solution: Changed to `httpx<0.26,>=0.24` in requirements.txt
+**Solution**: 
+1. Deleted all Dockerfile references (Dockerfile.backup)
+2. Deleted conflicting root config files (railway.toml, nixpacks.toml)
+3. Simplified Backend/railway.json to only specify NIXPACKS builder
+4. Added Backend/.railwayignore to prevent Railway from detecting any Dockerfile
+5. Now Railway will use Backend/nixpacks.toml for all build configuration
+
+**Configuration**:
+- Root Directory: `Backend` (must be set in Railway dashboard)
+- Builder: Nixpacks (specified in Backend/railway.json)
+- Build Config: Backend/nixpacks.toml
+- Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+### Previous Fixes
+
+1. **Dockerfile Permission Error** (Commit: f643b70)
+   - Fixed permission issues with uvicorn executable
+   
+2. **httpx Dependency Conflict** (Commit: f643b70)
+   - Changed to `httpx<0.26,>=0.24` for supabase compatibility
 
 ### 📋 What Was Changed
 
-**Backend/Dockerfile**:
-- Uses multi-stage build (builder + production)
-- Installs packages globally in builder stage
-- Copies packages from `/usr/local/lib` and `/usr/local/bin`
-- Removes permission issues with uvicorn executable
+**Latest Changes (Commit: 2732896)**:
+- Deleted `Backend/Dockerfile.backup`
+- Deleted `railway.toml` (root)
+- Deleted `nixpacks.toml` (root)
+- Simplified `Backend/railway.json` to only specify NIXPACKS builder
+- Added `Backend/.railwayignore` to ignore Dockerfile patterns
+- Railway will now use `Backend/nixpacks.toml` exclusively
 
-**Backend/requirements.txt**:
-- Changed `httpx==0.26.0` to `httpx<0.26,>=0.24`
-- Now compatible with supabase 2.3.4 requirements
+**Backend/nixpacks.toml** (the only build config now):
+```toml
+[phases.setup]
+nixPkgs = ["python311", "postgresql"]
+
+[phases.install]
+cmds = ["pip install --upgrade pip", "pip install -r requirements.txt"]
+
+[start]
+cmd = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+
+[variables]
+PYTHONUNBUFFERED = "1"
+```
+
+**Previous Changes**:
+- Fixed httpx dependency: `httpx<0.26,>=0.24`
 
 ### 🚀 Next Steps
 
